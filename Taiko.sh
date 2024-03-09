@@ -45,7 +45,7 @@ else
 fi
 
 # 克隆 Taiko 仓库
-git clone https://github.com/taikoxyz/simple-taiko-node.git
+git clone https://github.com/snakeeeeeeeee/simple-taiko-node.git
 
 # 进入 Taiko 目录
 cd simple-taiko-node
