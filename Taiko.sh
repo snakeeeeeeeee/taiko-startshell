@@ -2,6 +2,7 @@
 
 # 脚本保存路径
 SCRIPT_PATH="$HOME/Taiko.sh"
+
 # 自动设置快捷键的功能
 function check_and_set_alias() {
     local alias_name="taiko"
@@ -45,7 +46,7 @@ else
 fi
 
 # 克隆 Taiko 仓库
-git clone https://github.com/snakeeeeeeeee/simple-taiko-node.git
+git clone https://github.com/taikoxyz/simple-taiko-node.git
 
 # 进入 Taiko 目录
 cd simple-taiko-node
@@ -56,11 +57,16 @@ if [ ! -f .env ]; then
 fi
 
 # 提示用户输入环境变量的值
-read -p "请输入BlockPI holesky HTTP链接: " l1_endpoint_http
-read -p "请输入BlockPI holesky WS链接: " l1_endpoint_ws
-# 提示用户输入环境变量的值
-read -p "请输入EVM钱包私钥: " l1_proposer_private_key
+
+l1_endpoint_http=https://holesky.glacierluo.io
+l1_endpoint_ws=wss://holesky.glacierluo.io
 enable_proposer=true
+disable_p2p_sync=false
+#read -p "请输入BlockPI holesky HTTP链接: " l1_endpoint_http
+#read -p "请输入BlockPI holesky WS链接: " l1_endpoint_ws
+#read -p "请确认是否作为提议者（可选true或者false，目前prover 节点宕机，请输入false，更新时间2024.3.14 10.47）: " enable_proposer
+#read -p "请确认是否关闭P2P同步（可选true或者false，前期同步节点建议输入false，方便前期同步，后期阶段重跑脚本后，选择true，可以加速节点同步）: " disable_p2p_sync
+read -p "请输入EVM钱包私钥: " l1_proposer_private_key
 
 # 检测并罗列未被占用的端口
 #function list_recommended_ports {
@@ -82,8 +88,8 @@ enable_proposer=true
 #        echo -e "\033[0;32m$port\033[0m"
 #    done
 #}
-
-# 使用推荐端口函数为端口配置
+#
+## 使用推荐端口函数为端口配置
 #list_recommended_ports
 
 # 提示用户输入端口配置，允许使用默认值
@@ -108,20 +114,33 @@ enable_proposer=true
 #read -p "请输入Grafana端口 [默认: 3001]: " port_grafana
 #port_grafana=${port_grafana:-3001}
 
+port_l2_execution_engine_http=8000
+port_l2_execution_engine_ws=8001
+port_l2_execution_engine_metrics=8002
+port_l2_execution_engine_p2p=8003
+port_prover_server=8004
+port_prometheus=8005
+port_grafana=8006
+
+
+
+
+
 # 将用户输入的值写入.env文件
 sed -i "s|L1_ENDPOINT_HTTP=.*|L1_ENDPOINT_HTTP=${l1_endpoint_http}|" .env
 sed -i "s|L1_ENDPOINT_WS=.*|L1_ENDPOINT_WS=${l1_endpoint_ws}|" .env
 sed -i "s|ENABLE_PROPOSER=.*|ENABLE_PROPOSER=${enable_proposer}|" .env
 sed -i "s|L1_PROPOSER_PRIVATE_KEY=.*|L1_PROPOSER_PRIVATE_KEY=${l1_proposer_private_key}|" .env
+sed -i "s|DISABLE_P2P_SYNC=.*|DISABLE_P2P_SYNC=${disable_p2p_sync}|" .env
 
-# 更新.env文件中的端口配置 已经在.env文件中配置好了
-#sed -i "s|PORT_L2_EXECUTION_ENGINE_HTTP=.*|PORT_L2_EXECUTION_ENGINE_HTTP=${port_l2_execution_engine_http}|" .env
-#sed -i "s|PORT_L2_EXECUTION_ENGINE_WS=.*|PORT_L2_EXECUTION_ENGINE_WS=${port_l2_execution_engine_ws}|" .env
-#sed -i "s|PORT_L2_EXECUTION_ENGINE_METRICS=.*|PORT_L2_EXECUTION_ENGINE_METRICS=${port_l2_execution_engine_metrics}|" .env
-#sed -i "s|PORT_L2_EXECUTION_ENGINE_P2P=.*|PORT_L2_EXECUTION_ENGINE_P2P=${port_l2_execution_engine_p2p}|" .env
-#sed -i "s|PORT_PROVER_SERVER=.*|PORT_PROVER_SERVER=${port_prover_server}|" .env
-#sed -i "s|PORT_PROMETHEUS=.*|PORT_PROMETHEUS=${port_prometheus}|" .env
-#sed -i "s|PORT_GRAFANA=.*|PORT_GRAFANA=${port_grafana}|" .env
+# 更新.env文件中的端口配置
+sed -i "s|PORT_L2_EXECUTION_ENGINE_HTTP=.*|PORT_L2_EXECUTION_ENGINE_HTTP=${port_l2_execution_engine_http}|" .env
+sed -i "s|PORT_L2_EXECUTION_ENGINE_WS=.*|PORT_L2_EXECUTION_ENGINE_WS=${port_l2_execution_engine_ws}|" .env
+sed -i "s|PORT_L2_EXECUTION_ENGINE_METRICS=.*|PORT_L2_EXECUTION_ENGINE_METRICS=${port_l2_execution_engine_metrics}|" .env
+sed -i "s|PORT_L2_EXECUTION_ENGINE_P2P=.*|PORT_L2_EXECUTION_ENGINE_P2P=${port_l2_execution_engine_p2p}|" .env
+sed -i "s|PORT_PROVER_SERVER=.*|PORT_PROVER_SERVER=${port_prover_server}|" .env
+sed -i "s|PORT_PROMETHEUS=.*|PORT_PROMETHEUS=${port_prometheus}|" .env
+sed -i "s|PORT_GRAFANA=.*|PORT_GRAFANA=${port_grafana}|" .env
 sed -i "s|PROVER_ENDPOINTS=.*|PROVER_ENDPOINTS=http://taiko-a6-prover.zkpool.io|" .env
 
 # 用户信息已配置完毕
@@ -175,30 +194,30 @@ sudo docker run hello-world
 # 检查 Docker Compose 版本
 docker-compose -v
 
+# 先结束docker
+docker compose down
+
 # 运行 Taiko 节点
-docker-compose -f docker-compose-1.yaml -f docker-compose-2.yaml up
+docker compose up -d
 
 # 获取公网 IP 地址
 public_ip=$(curl -s ifconfig.me)
 
 # 准备原始链接
-original_url1="LocalHost:11116/d/L2ExecutionEngine/l2-execution-engine-overview?orgId=1&refresh=10s"
-original_url2="LocalHost:12116/d/L2ExecutionEngine/l2-execution-engine-overview?orgId=1&refresh=10s"
+original_url="LocalHost:${port_grafana}/d/L2ExecutionEngine/l2-execution-engine-overview?orgId=1&refresh=10s"
 
 # 替换 LocalHost 为公网 IP 地址
-updated_url1=$(echo original_url1 | sed "s/LocalHost/$public_ip/")
-updated_url2=$(echo original_url2 | sed "s/LocalHost/$public_ip/")
+updated_url=$(echo $original_url | sed "s/LocalHost/$public_ip/")
 
 # 显示更新后的链接
-echo "请通过以下链接查询设备运行情况，如果无法访问，请等待2-3分钟后重试：$updated_url1"
-echo "请通过以下链接查询设备运行情况，如果无法访问，请等待2-3分钟后重试：$updated_url2"
+echo "请通过以下链接查询设备运行情况，如果无法访问，请等待2-3分钟后重试：$updated_url"
 
 }
 
 # 查看节点日志
 function check_service_status() {
     cd simple-taiko-node
-    docker compose logs -f
+    docker compose logs -f --tail 20
 }
 
 
