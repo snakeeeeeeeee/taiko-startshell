@@ -58,10 +58,10 @@ fi
 
 # 提示用户输入环境变量的值
 
-l1_endpoint_http=https://holesky.glacierluo.io
-l1_endpoint_ws=wss://holesky.glacierluo.io
+l1_endpoint_http=http://84.247.155.79:8545
+l1_endpoint_ws=ws://84.247.155.79:8546
 enable_proposer=true
-disable_p2p_sync=false
+disable_p2p_sync=true
 #read -p "请输入BlockPI holesky HTTP链接: " l1_endpoint_http
 #read -p "请输入BlockPI holesky WS链接: " l1_endpoint_ws
 #read -p "请确认是否作为提议者（可选true或者false，目前prover 节点宕机，请输入false，更新时间2024.3.14 10.47）: " enable_proposer
